@@ -80,31 +80,33 @@
                 synth.speak(ut);
             };
 
-            const handleChat = async (e) => {
-                e.preventDefault();
-                if (!userInput.trim()) return;
-                const newMsg = { role: 'user', content: userInput };
-                const updatedMessages = [...messages, newMsg];
-                setMessages(updatedMessages);
-                setUserInput("");
+        const handleChat = async (e) => {
+    e.preventDefault();
+    if (!userInput.trim()) return;
+    
+    const newMsg = { role: 'user', content: userInput };
+    const updatedMessages = [...messages, newMsg];
+    setMessages(updatedMessages);
+    setUserInput("");
 
-                try {
-                    const res = await fetch('/.netlify/functions/deepseek-proxy', {
-                        method: 'POST',
-                        body: JSON.stringify({ era: `${currentEra.name} (${userInput})` })
-                    });
-                    const data = await res.json();
-                    const aiMsg = { role: 'ai', content: data.choices[0].message.content };
-                    const finalChat = [...updatedMessages, aiMsg];
-                    setMessages(finalChat);
-                    
-                    const newHistory = [{ id: Date.now(), title: userInput.slice(0, 15), dialog: finalChat }, ...chatHistory];
-                    setChatHistory(newHistory.slice(0, 10)); // 仅保留最近10条
-                    localStorage.setItem('chat_history', JSON.stringify(newHistory.slice(0, 10)));
-                } catch (err) {
-                    setMessages([...updatedMessages, { role: 'ai', content: "抱歉，历史专家暂时无法连线。" }]);
-                }
-            };
+    try {
+        // 注意：本地调试时此路径可能无效，需部署到 Netlify 后测试
+        const res = await fetch('/.netlify/functions/deepseek-proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ era: `${currentEra.name} (${userInput})` })
+        });
+
+        if (!res.ok) throw new Error('网络响应异常');
+
+        const data = await res.json();
+        const aiMsg = { role: 'ai', content: data.choices[0].message.content };
+        setMessages([...updatedMessages, aiMsg]);
+    } catch (err) {
+        console.error("对话失败:", err);
+        setMessages([...updatedMessages, { role: 'ai', content: "抱歉，历史专家暂时无法连线（服务器超时或配置错误）。" }]);
+    }
+};
 
             const deleteHistory = (id) => {
                 const updated = chatHistory.filter(h => h.id !== id);
