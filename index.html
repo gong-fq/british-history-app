@@ -82,7 +82,8 @@
                 setIsTyping(true);
 
                 try {
-                    const res = await fetch('/.netlify/functions/deepseek-proxy', {
+                    // 在 index.html 中找到这一行并修改
+                        const res = await fetch('/.netlify/functions/deepseek-proxy', { ... });
                         method: 'POST',
                         body: JSON.stringify({ era: `${currentEra.name}: ${userInput}` })
                     });
