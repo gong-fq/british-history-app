@@ -18,428 +18,165 @@
         .play-btn { transition: all 0.2s; cursor: pointer; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: rgba(59, 130, 246, 0.1); }
         .play-btn.playing { background: #22c55e; color: white; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .chat-scroll { max-height: 400px; overflow-y: auto; scrollbar-width: thin; }
+        .history-item:hover .delete-btn { opacity: 1; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
-        // 完整的13个时代数据，包含详细内容（修复乱码问题）
         const ERAS = [
-            { 
-                id: 'pre-roman', 
-                name: '史前与凯尔特', 
-                enName: 'Pre-Roman & Celtic', 
-                year: 'Before AD 43', 
-                quickIntro: { 
-                    zh: "史前时期的英国是不列颠文明的曙光，以巨石阵和凯尔特部落文明闻名。", 
-                    en: "Pre-Roman Britain marks the dawn of civilization, famous for Stonehenge and Celtic tribes." 
-                },
-                detailedContent: {
-                    zh: "不列颠群岛的史前时期始于旧石器时代晚期，持续到公元43年罗马入侵。这一时期最重要的考古遗迹是位于威尔特郡的巨石阵（Stonehenge），建于公元前3000年至公元前2000年之间。凯尔特人约在公元前800年至公元前600年期间从欧洲大陆迁徙而来，带来了铁器时代文化。凯尔特社会以部落为基础，由德鲁伊教祭司统治，拥有复杂的艺术风格和神话体系。他们建造了山堡（hillforts）作为防御和居住中心，其中梅登城堡（Maiden Castle）是最大的铁器时代山堡之一。",
-                    en: "The prehistoric period of the British Isles began in the late Paleolithic era and lasted until the Roman invasion in AD 43. The most significant archaeological site from this era is Stonehenge in Wiltshire, constructed between 3000 and 2000 BCE. Celtic peoples migrated from continental Europe around 800-600 BCE, bringing Iron Age culture. Celtic society was tribal, ruled by Druid priests, with complex artistic styles and mythology. They built hillforts like Maiden Castle, one of the largest Iron Age hillforts, as defensive and residential centers."
-                },
-                sources: [{ name: "British Museum", url: "https://www.britishmuseum.org" }, { name: "English Heritage", url: "https://www.english-heritage.org.uk" }] 
-            },
-            { 
-                id: 'roman', 
-                name: '罗马统治时期', 
-                enName: 'Roman Britain', 
-                year: 'AD 43 - 410', 
-                quickIntro: { 
-                    zh: "罗马人带来了城市、道路和法律。哈德良长城是这一时期的重要遗迹。", 
-                    en: "Romans introduced cities, roads, and laws. Hadrian's Wall remains a key landmark." 
-                },
-                detailedContent: {
-                    zh: "公元43年，罗马皇帝克劳狄乌斯派遣四万大军入侵不列颠，开始了近四百年的罗马统治。罗马人建立了伦敦（Londinium）、约克（Eboracum）和巴斯（Aquae Sulis）等城市，并修建了超过8000英里的道路网络。哈德良长城（Hadrian's Wall）建于公元122-128年，横跨英格兰北部，全长73英里，是罗马帝国最北端的防线。罗马不列颠时期，不列颠逐渐罗马化，接受了拉丁语、罗马法律和行政管理体系。基督教在公元4世纪传入。公元410年，罗马军队撤离，结束了罗马在不列颠的统治。",
-                    en: "In AD 43, Emperor Claudius sent 40,000 troops to invade Britain, beginning nearly 400 years of Roman rule. Romans established cities like Londinium (London), Eboracum (York), and Aquae Sulis (Bath), building over 8,000 miles of roads. Hadrian's Wall, constructed AD 122-128, spanned 73 miles across northern England as the empire's northern frontier. Britain became Romanized, adopting Latin, Roman law, and administration. Christianity arrived in the 4th century. Roman troops withdrew in AD 410, ending Roman Britain."
-                },
-                sources: [{ name: "Roman Britain Org", url: "https://www.roman-britain.co.uk" }, { name: "Historic UK", url: "https://www.historic-uk.com" }] 
-            },
-            { 
-                id: 'anglo-saxon', 
-                name: '盎格鲁-撒克逊', 
-                enName: 'Anglo-Saxon Era', 
-                year: '410 - 1066', 
-                quickIntro: { 
-                    zh: "罗马撤军后，日耳曼部落定居于此，形成了早期英格兰王国的雏形。", 
-                    en: "After Romans left, Germanic tribes settled, forming the early kingdoms of England." 
-                },
-                detailedContent: {
-                    zh: "罗马军队撤离后，来自日德兰半岛和德国北部的盎格鲁-撒克逊人入侵并定居不列颠。这一时期形成了七个主要王国：肯特、东盎格利亚、诺森布里亚、麦西亚、埃塞克斯、萨塞克斯和威塞克斯，史称'七国时代'。基督教在圣奥古斯丁于597年抵达肯特后重新传入。盎格鲁-撒克逊时期见证了英语的早期发展、史诗《贝奥武夫》的创作以及阿尔弗雷德大帝（871-899年在位）对维京人入侵的抵抗。1066年的黑斯廷斯战役中，盎格鲁-撒克逊国王哈罗德二世被诺曼征服者威廉击败，结束了这个时代。",
-                    en: "After Roman withdrawal, Angles, Saxons, and Jutes from Jutland and northern Germany invaded and settled in Britain. This period saw the formation of seven major kingdoms: Kent, East Anglia, Northumbria, Mercia, Essex, Sussex, and Wessex—the 'Heptarchy'. Christianity was reintroduced with St. Augustine's arrival in Kent in 597. The Anglo-Saxon era witnessed early development of the English language, composition of the epic 'Beowulf', and King Alfred the Great's (r. 871-899) resistance against Viking invasions. The Battle of Hastings in 1066, where Anglo-Saxon King Harold II was defeated by Norman conqueror William, ended this era."
-                },
-                sources: [{ name: "British Library", url: "https://www.bl.uk/anglo-saxons" }] 
-            },
-            { 
-                id: 'medieval', 
-                name: '中世纪盛期', 
-                enName: 'The Middle Ages', 
-                year: '1066 - 1485', 
-                quickIntro: { 
-                    zh: "从诺曼征服到玫瑰战争，这是一个骑士、领主和大宪章的时代。", 
-                    en: "From the Norman Conquest to the Wars of the Roses, an age of knights and Magna Carta." 
-                },
-                detailedContent: {
-                    zh: "诺曼征服后，威廉一世建立了封建制度，建造了伦敦塔和白塔等城堡。1215年，贵族强迫约翰王签署《大宪章》（Magna Carta），限制了王权，奠定了英国法治基础。中世纪见证了百年战争（1337-1453年）与法国争夺领土，以及黑死病（1348-1349年）造成人口减半。玫瑰战争（1455-1487年）是约克家族和兰开斯特家族之间的内战，最终亨利·都铎获胜，建立都铎王朝。这一时期哥特式建筑盛行，坎特伯雷大教堂和威斯敏斯特教堂得以扩建。",
-                    en: "After the Norman Conquest, William I established feudalism, constructing castles like the Tower of London's White Tower. In 1215, nobles forced King John to sign Magna Carta, limiting royal power and laying foundations for English common law. The Middle Ages witnessed the Hundred Years' War (1337-1453) against France and the Black Death (1348-1349) halving the population. The Wars of the Roses (1455-1487) were civil wars between Houses of York and Lancaster, ending with Henry Tudor's victory and establishment of the Tudor dynasty. Gothic architecture flourished with expansions to Canterbury Cathedral and Westminster Abbey."
-                },
-                sources: [{ name: "National Archives", url: "https://www.nationalarchives.gov.uk" }, { name: "Magna Carta @ BL", url: "https://www.bl.uk/magna-carta" }] 
-            },
-            { 
-                id: 'tudor', 
-                name: '都铎王朝', 
-                enName: 'The Tudors', 
-                year: '1485 - 1603', 
-                quickIntro: { 
-                    zh: "亨利八世与伊丽莎白一世的黄金时代，见证了宗教改革和海外扩张。", 
-                    en: "The golden age of Henry VIII and Elizabeth I, seeing the Reformation and expansion." 
-                },
-                detailedContent: {
-                    zh: "都铎王朝始于亨利·都铎（亨利七世）在博斯沃思战役中获胜。亨利八世（1509-1547年在位）因离婚问题与罗马教廷决裂，创立英国国教会，解散修道院。他的女儿伊丽莎白一世（1558-1603年在位）时期是英国文艺复兴的黄金时代，见证了莎士比亚的戏剧、弗朗西斯·德雷克的环球航行以及1588年击败西班牙无敌舰队。这一时期英国开始海外殖民，建立了第一个北美殖民地（罗阿诺克，1585年）。印刷术的引入促进了知识的传播。",
-                    en: "The Tudor dynasty began with Henry Tudor's (Henry VII) victory at Bosworth Field. Henry VIII (r. 1509-1547) broke with Rome over divorce, establishing the Church of England and dissolving monasteries. His daughter Elizabeth I's reign (1558-1603) was a golden age of English Renaissance, witnessing Shakespeare's plays, Francis Drake's circumnavigation, and defeat of the Spanish Armada in 1588. England began overseas colonization with the first North American colony (Roanoke, 1585). The printing press spread knowledge widely."
-                },
-                sources: [{ name: "Royal Palaces", url: "https://www.hrp.org.uk" }, { name: "Tudor Society", url: "https://www.tudorsociety.com" }] 
-            },
-            { 
-                id: 'stuart', 
-                name: '斯图亚特王朝', 
-                enName: 'Stuart Period', 
-                year: '1603 - 1714', 
-                quickIntro: { 
-                    zh: "经历了内战与光荣革命，英国最终确立了君主立宪政体。", 
-                    en: "Through Civil War and the Glorious Revolution, Britain became a constitutional monarchy." 
-                },
-                detailedContent: {
-                    zh: "斯图亚特王朝始于苏格兰的詹姆斯六世成为英格兰的詹姆斯一世（1603年）。查理一世与议会的冲突导致了英国内战（1642-1651年），最终查理一世被处决，英国成为共和国（联邦时期）。奥利弗·克伦威尔担任护国公。1660年君主制复辟，但1688年的光荣革命确立了议会至上原则，威廉三世和玛丽二世接受了《权利法案》。科学革命在此期间兴起，艾萨克·牛顿发表了《自然哲学的数学原理》（1687年）。大瘟疫（1665年）和伦敦大火（1666年）深刻影响了城市。",
-                    en: "The Stuart period began with Scotland's James VI becoming England's James I (1603). Conflict between Charles I and Parliament led to the English Civil War (1642-1651), ending with Charles' execution and establishment of the Commonwealth. Oliver Cromwell became Lord Protector. Monarchy was restored in 1660, but the Glorious Revolution of 1688 established parliamentary supremacy with William III and Mary II accepting the Bill of Rights. Scientific revolution flourished with Isaac Newton's 'Principia Mathematica' (1687). The Great Plague (1665) and Great Fire of London (1666) profoundly impacted the city."
-                },
-                sources: [{ name: "Civil War Project", url: "https://www.english-heritage.org.uk/learn/story-of-england/stuarts/war/" }] 
-            },
-            { 
-                id: 'georgian', 
-                name: '乔治时代', 
-                enName: 'Georgian Era', 
-                year: '1714 - 1837', 
-                quickIntro: { 
-                    zh: "大英帝国扩张的时期，也见证了工业革命的萌芽。", 
-                    en: "An era of imperial expansion and the dawn of the Industrial Revolution." 
-                },
-                detailedContent: {
-                    zh: "以四位乔治国王命名，这一时代见证了英国成为全球主导力量。大英帝国在七年战争（1756-1763年）中击败法国，获得了加拿大和印度领土。美国独立战争（1775-1783年）导致美国独立。工业革命始于纺织机械（珍妮纺纱机、水力纺纱机）和蒸汽机（詹姆斯·瓦特改进）的发明。农业革命提高了粮食产量。文化上，这是简·奥斯汀的小说、乔治亚建筑和风景园林的时代。政治上，尽管君主权力减弱，但腐败的'衰败选区'制度仍占主导地位。",
-                    en: "Named for four King Georges, this era saw Britain become a global power. The British Empire defeated France in the Seven Years' War (1756-1763), gaining Canada and Indian territories. The American Revolution (1775-1783) led to U.S. independence. The Industrial Revolution began with textile machinery (spinning jenny, water frame) and steam engine improvements (James Watt). Agricultural Revolution increased food production. Culturally, this was the age of Jane Austen's novels, Georgian architecture, and landscape gardening. Politically, though monarchy weakened, corrupt 'rotten boroughs' still dominated."
-                },
-                sources: [{ name: "Georgian Papers", url: "https://georgianpapers.com" }] 
-            },
-            { 
-                id: 'victorian', 
-                name: '维多利亚时代', 
-                enName: 'Victorian Era', 
-                year: '1837 - 1901', 
-                quickIntro: { 
-                    zh: "英国工业鼎盛时期，被称为'日不落帝国'，社会发生剧烈变革。", 
-                    en: "The peak of industrial power and the height of the British Empire." 
-                },
-                detailedContent: {
-                    zh: "维多利亚时代以维多利亚女王（1837-1901年在位）命名，是大英帝国的鼎盛时期，领土覆盖全球四分之一土地，被称为'日不落帝国'。工业革命达到高峰，蒸汽机、铁路和电报彻底改变了运输和通讯。伦敦举办了第一届世界博览会（1851年）。这一时代见证了社会巨大变革：城市化加速，人口从农村涌入工业城市；教育改革普及了基础教育；查尔斯·达尔文的《物种起源》（1859年）挑战了传统宗教观念；查尔斯·狄更斯的小说揭露了社会不公。然而，贫富差距极大，工人条件恶劣，童工普遍存在。",
-                    en: "The Victorian era, named after Queen Victoria (reigned 1837-1901), marked the height of the British Empire, covering a quarter of global territory—the 'Empire on which the sun never sets'. The Industrial Revolution peaked with steam engines, railways, and telegraph transforming transport and communication. London hosted the Great Exhibition (1851). This era saw immense social changes: rapid urbanization as people moved from countryside to industrial cities; education reforms spreading basic literacy; Charles Darwin's 'On the Origin of Species' (1859) challenging religious beliefs; Charles Dickens' novels exposing social injustices. However, vast inequality existed with poor working conditions and child labor widespread."
-                },
-                sources: [{ name: "V&A Museum", url: "https://www.vam.ac.uk" }, { name: "Victorian Web", url: "https://victorianweb.org" }] 
-            },
-            { 
-                id: 'edwardian', 
-                name: '爱德华时代', 
-                enName: 'Edwardian Era', 
-                year: '1901 - 1910', 
-                quickIntro: { 
-                    zh: "一战前的短暂繁荣与宁静，优雅与社会动荡并存。", 
-                    en: "A brief period of elegance and social unrest before the First World War." 
-                },
-                detailedContent: {
-                    zh: "爱德华七世（1901-1910年在位）的短暂统治是一战前最后的和平时期。表面上是优雅奢华的时代：乡村别墅派对、高级时装、汽车普及和泰坦尼克号首航（1912年）。但深层社会矛盾激化：妇女参政运动争取投票权，工会运动壮大，爱尔兰自治问题加剧。科学技术进步：无线电传输、飞机（莱特兄弟1903年）、相对论（爱因斯坦1905年）。文化上，这是侦探小说（福尔摩斯）、现代主义文学萌芽和电影诞生的时期。欧洲军备竞赛最终导致第一次世界大战爆发。",
-                    en: "Edward VII's brief reign (1901-1910) was the last peaceful period before WWI. Superficially an era of elegance: country house parties, haute couture, automobiles, and the Titanic's maiden voyage (1912). But underlying social tensions intensified: suffragettes campaigned for women's vote, trade unions grew, Irish Home Rule crisis deepened. Technological advances included radio transmission, airplanes (Wright brothers 1903), relativity theory (Einstein 1905). Culturally, this saw detective fiction (Sherlock Holmes), emerging modernism, and cinema's birth. European arms race ultimately led to WWI."
-                },
-                sources: [{ name: "Edwardian Culture", url: "http://www.edwardianculture.com" }] 
-            },
-            { 
-                id: 'world-wars', 
-                name: '世界大战时期', 
-                enName: 'World Wars Era', 
-                year: '1914 - 1945', 
-                quickIntro: { 
-                    zh: "两次大战深刻改变了英国的地位，也是全民英勇抗战的岁月。", 
-                    en: "Two World Wars reshaped Britain's global standing and social fabric." 
-                },
-                detailedContent: {
-                    zh: "第一次世界大战（1914-1918年）造成90万英国士兵死亡，社会结构被永久改变，妇女获得部分投票权（1918年）。战间期经历了大萧条（1929-1939年）和高失业率。第二次世界大战（1939-1945年）中，英国在温斯顿·丘吉尔领导下顽强抵抗纳粹德国。不列颠之战（1940年）中皇家空军保卫了领空，伦敦等城市遭受闪电战轰炸。战争导致大量平民伤亡，配给制实施，妇女大量参与军工生产。1945年战争结束时，英国虽胜利但国力严重削弱，帝国开始解体。",
-                    en: "World War I (1914-1918) caused 900,000 British military deaths, permanently altering society, with women gaining partial suffrage (1918). The interwar period saw the Great Depression (1929-1939) and high unemployment. During WWII (1939-1945), Britain under Winston Churchill resisted Nazi Germany. The Battle of Britain (1940) saw RAF defend skies, while London and other cities endured Blitz bombing. War caused massive civilian casualties, rationing was implemented, and women extensively entered war industries. By 1945, though victorious, Britain was severely weakened, and the Empire began dismantling."
-                },
-                sources: [{ name: "IWM", url: "https://www.iwm.org.uk" }] 
-            },
-            { 
-                id: 'post-war', 
-                name: '战后重建', 
-                enName: 'Post-War Period', 
-                year: '1945 - 1979', 
-                quickIntro: { 
-                    zh: "福利国家的建立和帝国的去殖民化是这一时期的主题。", 
-                    en: "The birth of the welfare state and the decolonization of the Empire." 
-                },
-                detailedContent: {
-                    zh: "战后工党政府建立了国民医疗服务体系（NHS，1948年）和全面的福利国家。帝国迅速解体：印度独立（1947年），随后非洲和亚洲殖民地相继独立。冷战背景下，英国成为北约创始成员国并发展核武器。社会发生剧变：移民从前殖民地大量涌入（1948年'帝国风潮'号抵达），多元文化社会开始形成。经济经历了战后繁荣，但70年代遭遇石油危机（1973年）和经济滞胀。加入欧洲经济共同体（1973年）。流行文化方面，披头士乐队和摇滚乐兴起，青年文化蓬勃发展。",
-                    en: "Postwar Labour government established the National Health Service (NHS, 1948) and comprehensive welfare state. Empire rapidly dismantled: Indian independence (1947), followed by African and Asian colonies. During the Cold War, Britain became a NATO founding member and developed nuclear weapons. Society transformed: mass immigration from former colonies (SS Empire Windrush arrival 1948), beginning multicultural society. Economy experienced postwar boom but faced 1970s oil crisis (1973) and stagflation. Joined European Economic Community (1973). Pop culture saw the Beatles and rock music rise, youth culture flourish."
-                },
-                sources: [{ name: "Parliament UK", url: "https://www.parliament.uk" }] 
-            },
-            { 
-                id: 'thatcher', 
-                name: '撒切尔时代', 
-                enName: 'Thatcher Era', 
-                year: '1979 - 1990', 
-                quickIntro: { 
-                    zh: "撒切尔夫人的经济改革深刻地改变了英国的社会结构。", 
-                    en: "Margaret Thatcher's reforms radically transformed the British economy." 
-                },
-                detailedContent: {
-                    zh: "玛格丽特·撒切尔（1979-1990年任首相）推行新自由主义改革：国有企业私有化（英国电信、英国燃气），削弱工会力量（1984-1985年矿工罢工），减少政府干预。福克兰战争（1982年）提升了她的声望。经济上，金融服务业（'金融大爆炸'1986年）取代制造业成为主导，但去工业化导致北方工业区衰退。社会两极分化加剧，失业率高涨。与欧洲关系紧张（'我要回我的钱'）。北爱尔兰问题持续（1981年绝食抗议）。文化上，新浪漫主义音乐和雅皮士文化兴起。",
-                    en: "Margaret Thatcher (Prime Minister 1979-1990) implemented neoliberal reforms: privatization of state industries (British Telecom, British Gas), weakening trade unions (1984-1985 miners' strike), reducing state intervention. Falklands War (1982) boosted her popularity. Economically, financial services ('Big Bang' 1986) replaced manufacturing, but deindustrialization caused northern industrial decline. Society polarized with high unemployment. Tensions with Europe ('I want my money back'). Northern Ireland conflict continued (1981 hunger strikes). Culturally, New Romantic music and yuppie culture emerged."
-                },
-                sources: [{ name: "Thatcher Foundation", url: "https://www.margaretthatcher.org" }] 
-            },
-            { 
-                id: 'modern', 
-                name: '现代英国', 
-                enName: 'Modern Britain', 
-                year: '1990 - Present', 
-                quickIntro: { 
-                    zh: "在数字化与全球化背景下，英国在传统与变革中寻找新角色。", 
-                    en: "Navigating globalization while seeking a new national identity." 
-                },
-                detailedContent: {
-                    zh: "现代英国经历了冷战结束、欧盟一体化、苏格兰和威尔士权力下放、北爱尔兰和平进程以及2016年脱欧公投等重大事件。数字化革命彻底改变了经济和社会结构，伦敦成为全球金融科技中心。文化上，英国继续发挥全球影响力，从哈利·波特系列到英超足球。社会变得更加多元，移民和多元文化成为国家特征。英国在气候变化、人工智能伦理等全球议题上寻求领导角色，同时在脱欧后重新定义与欧洲及世界的关系。托尼·布莱尔的新工党（1997-2007年）带来了宪法改革和最低工资制度。",
-                    en: "Modern Britain witnessed the Cold War's end, EU integration, devolution to Scotland and Wales, Northern Ireland peace process, and 2016 Brexit referendum. Digital revolution transformed economy, with London becoming a global fintech hub. Culturally, Britain maintains global influence from Harry Potter to Premier League football. Society became more diverse with immigration and multiculturalism defining national identity. Britain seeks leadership on climate change, AI ethics while redefining post-Brexit relationships. Tony Blair's New Labour (1997-2007) brought constitutional reforms and minimum wage."
-                },
-                sources: [{ name: "GOV.UK", url: "https://www.gov.uk" }, { name: "British Council", url: "https://www.britishcouncil.org" }] 
-            }
+            { id: 'pre-roman', name: '史前与凯尔特', enName: 'Pre-Roman & Celtic', year: 'Before AD 43', quickIntro: { zh: "史前时期的英国是不列颠文明的曙光，以巨石阵和凯尔特部落文明闻名。", en: "Pre-Roman Britain marks the dawn of civilization, famous for Stonehenge and Celtic tribes." }, detailedContent: { zh: "不列颠群岛的史前时期始于旧石器时代晚期，持续到公元43年罗马入侵...", en: "The prehistoric period of the British Isles began in the late Paleolithic era..." }, sources: [{ name: "British Museum", url: "https://www.britishmuseum.org" }] },
+            { id: 'roman', name: '罗马统治时期', enName: 'Roman Britain', year: 'AD 43 - 410', quickIntro: { zh: "罗马人带来了城市、道路和法律。哈德良长城是这一时期的重要遗迹。", en: "Romans introduced cities, roads, and laws. Hadrian's Wall remains a key landmark." }, detailedContent: { zh: "公元43年，罗马皇帝克劳狄乌斯派遣四万大军入侵不列颠...", en: "In AD 43, Emperor Claudius sent 40,000 troops to invade Britain..." }, sources: [{ name: "Roman Britain Org", url: "https://www.roman-britain.co.uk" }] },
+            { id: 'anglo-saxon', name: '盎格鲁-撒克逊', enName: 'Anglo-Saxon Era', year: '410 - 1066', quickIntro: { zh: "罗马撤军后，日耳曼部落定居于此，形成了早期英格兰王国的雏形。", en: "After Romans left, Germanic tribes settled, forming the early kingdoms of England." }, detailedContent: { zh: "罗马军队撤离后，来自日德兰半岛和德国北部的盎格鲁-撒克逊人入侵并定居不列颠...", en: "After Roman withdrawal, Angles, Saxons, and Jutes from Jutland..." }, sources: [{ name: "British Library", url: "https://www.bl.uk/anglo-saxons" }] },
+            { id: 'medieval', name: '中世纪盛期', enName: 'The Middle Ages', year: '1066 - 1485', quickIntro: { zh: "从诺曼征服到玫瑰战争，这是一个骑士、领主和大宪章的时代。", en: "From the Norman Conquest to the Wars of the Roses, an age of knights and Magna Carta." }, detailedContent: { zh: "诺曼征服后，威廉一世建立了封建制度...", en: "After the Norman Conquest, William I established feudalism..." }, sources: [{ name: "National Archives", url: "https://www.nationalarchives.gov.uk" }] },
+            { id: 'tudor', name: '都铎王朝', enName: 'The Tudors', year: '1485 - 1603', quickIntro: { zh: "亨利八世与伊丽莎白一世的黄金时代，见证了宗教改革和海外扩张。", en: "The golden age of Henry VIII and Elizabeth I, seeing the Reformation and expansion." }, detailedContent: { zh: "都铎王朝始于亨利·都铎（亨利七世）在博斯沃思战役中获胜...", en: "The Tudor dynasty began with Henry Tudor's (Henry VII) victory..." }, sources: [{ name: "Royal Palaces", url: "https://www.hrp.org.uk" }] },
+            { id: 'stuart', name: '斯图亚特王朝', enName: 'Stuart Period', year: '1603 - 1714', quickIntro: { zh: "经历了内战与光荣革命，英国最终确立了君主立宪政体。", en: "Through Civil War and the Glorious Revolution, Britain became a constitutional monarchy." }, detailedContent: { zh: "斯图亚特王朝始于苏格兰的詹姆斯六世成为英格兰的詹姆斯一世...", en: "The Stuart period began with Scotland's James VI becoming England's James I..." }, sources: [{ name: "Civil War Project", url: "https://www.english-heritage.org.uk" }] },
+            { id: 'georgian', name: '乔治时代', enName: 'Georgian Era', year: '1714 - 1837', quickIntro: { zh: "大英帝国扩张的时期，也见证了工业革命的萌芽。", en: "An era of imperial expansion and the dawn of the Industrial Revolution." }, detailedContent: { zh: "以四位乔治国王命名，这一时代见证了英国成为全球主导力量...", en: "Named for four King Georges, this era saw Britain become a global power..." }, sources: [{ name: "Georgian Papers", url: "https://georgianpapers.com" }] },
+            { id: 'victorian', name: '维多利亚时代', enName: 'Victorian Era', year: '1837 - 1901', quickIntro: { zh: "英国工业鼎盛时期，被称为'日不落帝国'，社会发生剧烈变革。", en: "The peak of industrial power and the height of the British Empire." }, detailedContent: { zh: "维多利亚时代以维多利亚女王命名，是大英帝国的鼎盛时期...", en: "The Victorian era, named after Queen Victoria (reigned 1837-1901)..." }, sources: [{ name: "V&A Museum", url: "https://www.vam.ac.uk" }] },
+            { id: 'edwardian', name: '爱德华时代', enName: 'Edwardian Era', year: '1901 - 1910', quickIntro: { zh: "一战前的短暂繁荣与宁静，优雅与社会动荡并存。", en: "A brief period of elegance and social unrest before the First World War." }, detailedContent: { zh: "爱德华七世的统治是一战前最后的和平时期...", en: "Edward VII's reign was the last peaceful period before WWI..." }, sources: [{ name: "Edwardian Culture", url: "http://www.edwardianculture.com" }] },
+            { id: 'world-wars', name: '世界大战时期', enName: 'World Wars Era', year: '1914 - 1945', quickIntro: { zh: "两次大战深刻改变了英国的地位，也是全民英勇抗战的岁月。", en: "Two World Wars reshaped Britain's global standing and social fabric." }, detailedContent: { zh: "第一次世界大战造成90万英国士兵死亡，社会结构被改变...", en: "World War I (1914-1918) caused 900,000 British military deaths..." }, sources: [{ name: "IWM", url: "https://www.iwm.org.uk" }] },
+            { id: 'post-war', name: '战后重建', enName: 'Post-War Period', year: '1945 - 1979', quickIntro: { zh: "福利国家的建立和帝国的去殖民化是这一时期的主题。", en: "The birth of the welfare state and the decolonization of the Empire." }, detailedContent: { zh: "战后工党政府建立了国民医疗服务体系（NHS）...", en: "Postwar Labour government established the National Health Service (NHS)..." }, sources: [{ name: "Parliament UK", url: "https://www.parliament.uk" }] },
+            { id: 'thatcher', name: '撒切尔时代', enName: 'Thatcher Era', year: '1979 - 1990', quickIntro: { zh: "撒切尔夫人的经济改革深刻地改变了英国的社会结构。", en: "Margaret Thatcher's reforms radically transformed the British economy." }, detailedContent: { zh: "玛格丽特·撒切尔推行新自由主义改革：国有企业私有化...", en: "Margaret Thatcher implemented neoliberal reforms..." }, sources: [{ name: "Thatcher Foundation", url: "https://www.margaretthatcher.org" }] },
+            { id: 'modern', name: '现代英国', enName: 'Modern Britain', year: '1990 - Present', quickIntro: { zh: "在数字化与全球化背景下，英国在传统与变革中寻找新角色。", en: "Navigating globalization while seeking a new national identity." }, detailedContent: { zh: "现代英国经历了冷战结束、欧盟一体化及脱欧公投等...", en: "Modern Britain witnessed the Cold War's end, EU integration..." }, sources: [{ name: "GOV.UK", url: "https://www.gov.uk" }] }
         ];
-
-        const CACHE = {};
 
         const App = () => {
             const [currentEra, setCurrentEra] = useState(ERAS[0]);
             const [content, setContent] = useState(ERAS[0].quickIntro);
             const [isLoading, setIsLoading] = useState(false);
             const [speaking, setSpeaking] = useState({ zh: false, en: false });
-            const [isSpeechSupported, setIsSpeechSupported] = useState(true);
             const [showDetailed, setShowDetailed] = useState(false);
+            const [messages, setMessages] = useState([]);
+            const [userInput, setUserInput] = useState("");
+            const [chatHistory, setChatHistory] = useState([]);
+            const chatEndRef = useRef(null);
             const synth = window.speechSynthesis;
 
             useEffect(() => {
-                if (!('speechSynthesis' in window)) {
-                    console.warn('Web Speech API 不支持');
-                    setIsSpeechSupported(false);
-                }
+                const saved = localStorage.getItem('chat_history');
+                if (saved) setChatHistory(JSON.parse(saved));
             }, []);
 
             useEffect(() => {
-                setContent(CACHE[currentEra.id] || currentEra.quickIntro);
+                setContent(currentEra.quickIntro);
                 setShowDetailed(false);
             }, [currentEra]);
 
-            const getMoreDetails = async () => {
-                setIsLoading(true);
-                
-                // 模拟延迟
-                await new Promise(resolve => setTimeout(resolve, 800));
-                
-                try {
-                    // 检查是否有预置的详细内容
-                    if (currentEra.detailedContent) {
-                        CACHE[currentEra.id] = currentEra.detailedContent;
-                        setContent(currentEra.detailedContent);
-                        setShowDetailed(true);
-                    } else {
-                        // 如果没有预置内容，显示扩展的简介
-                        const extendedContent = {
-                            zh: `${currentEra.quickIntro.zh} 这是英国历史上一个重要的转型时期，见证了政治、社会和文化的深刻变革。该时期的遗产至今仍在现代英国可见。`,
-                            en: `${currentEra.quickIntro.en} This was a crucial transitional period in British history, witnessing profound political, social, and cultural transformations. The legacy of this era remains visible in modern Britain today.`
-                        };
-                        CACHE[currentEra.id] = extendedContent;
-                        setContent(extendedContent);
-                        setShowDetailed(true);
-                    }
-                } catch (e) {
-                    console.error("深度内容获取失败:", e);
-                    
-                    // 出错时显示扩展内容
-                    const fallbackContent = {
-                        zh: `${currentEra.quickIntro.zh} 【扩展内容】这一时期在英国历史发展中具有里程碑意义，影响深远，为后续时代奠定了基础。学者们对这一时期的政治体制、社会结构和文化成就进行了广泛研究。`,
-                        en: `${currentEra.quickIntro.en} [Extended Content] This period holds landmark significance in British historical development, with profound influence that laid foundations for subsequent eras. Scholars have extensively studied its political systems, social structures, and cultural achievements.`
-                    };
-                    CACHE[currentEra.id] = fallbackContent;
-                    setContent(fallbackContent);
-                    setShowDetailed(true);
-                }
-                setIsLoading(false);
-            };
-
-            const resetToQuickIntro = () => {
-                setContent(currentEra.quickIntro);
-                setShowDetailed(false);
-            };
+            useEffect(() => {
+                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [messages]);
 
             const speak = (text, lang) => {
-                if (!isSpeechSupported) {
-                    alert('您的浏览器不支持语音合成功能');
-                    return;
-                }
-
                 synth.cancel();
-                
-                if (speaking[lang]) {
-                    setSpeaking({ zh: false, en: false });
-                    return;
-                }
-                
+                if (speaking[lang]) { setSpeaking({ zh: false, en: false }); return; }
                 const ut = new SpeechSynthesisUtterance(text);
-                
-                if (lang === 'zh') {
-                    ut.lang = 'zh-CN';
-                    ut.rate = 0.9;
-                } else {
-                    ut.lang = 'en-US';
-                    ut.rate = 1.0;
-                }
-                
-                ut.volume = 1.0;
-                ut.pitch = 1.0;
-                
-                ut.onstart = () => {
-                    setSpeaking({ ...speaking, [lang]: true });
-                };
-                
-                ut.onend = () => {
-                    setSpeaking({ zh: false, en: false });
-                };
-                
-                ut.onerror = (event) => {
-                    console.error('语音合成错误:', event);
-                    setSpeaking({ zh: false, en: false });
-                };
-                
+                ut.lang = lang === 'zh' ? 'zh-CN' : 'en-US';
+                ut.onstart = () => setSpeaking({ ...speaking, [lang]: true });
+                ut.onend = () => setSpeaking({ zh: false, en: false });
+                synth.speak(ut);
+            };
+
+            const handleChat = async (e) => {
+                e.preventDefault();
+                if (!userInput.trim()) return;
+                const newMsg = { role: 'user', content: userInput };
+                const updatedMessages = [...messages, newMsg];
+                setMessages(updatedMessages);
+                setUserInput("");
+
                 try {
-                    synth.speak(ut);
-                } catch (error) {
-                    console.error('语音合成异常:', error);
-                    setIsSpeechSupported(false);
+                    const res = await fetch('/.netlify/functions/deepseek-proxy', {
+                        method: 'POST',
+                        body: JSON.stringify({ era: `${currentEra.name} (${userInput})` })
+                    });
+                    const data = await res.json();
+                    const aiMsg = { role: 'ai', content: data.choices[0].message.content };
+                    const finalChat = [...updatedMessages, aiMsg];
+                    setMessages(finalChat);
+                    
+                    const newHistory = [{ id: Date.now(), title: userInput.slice(0, 15), dialog: finalChat }, ...chatHistory];
+                    setChatHistory(newHistory.slice(0, 10)); // 仅保留最近10条
+                    localStorage.setItem('chat_history', JSON.stringify(newHistory.slice(0, 10)));
+                } catch (err) {
+                    setMessages([...updatedMessages, { role: 'ai', content: "抱歉，历史专家暂时无法连线。" }]);
                 }
+            };
+
+            const deleteHistory = (id) => {
+                const updated = chatHistory.filter(h => h.id !== id);
+                setChatHistory(updated);
+                localStorage.setItem('chat_history', JSON.stringify(updated));
             };
 
             return (
                 <div className="flex min-h-screen">
-                    <aside className="w-72 bg-slate-900 text-white fixed h-full p-6 z-20 overflow-y-auto">
+                    <aside className="w-72 bg-slate-900 text-white fixed h-full p-6 z-20 overflow-y-auto flex flex-col">
                         <div className="mb-8">
                             <h2 className="text-2xl font-bold text-blue-400 serif italic">Chronos</h2>
-                            <p className="text-[10px] text-slate-400 mt-1 uppercase leading-tight tracking-wider font-semibold">
-                                龚凤乾教授设计的助学App<br/>《英国历史探索》
-                            </p>
+                            <p className="text-[10px] text-slate-400 mt-1 uppercase leading-tight tracking-wider font-semibold">龚凤乾教授设计的助学App<br/>《英国历史探索》</p>
                         </div>
-                        <nav className="space-y-1">
+                        <nav className="space-y-1 flex-1">
                             {ERAS.map(era => (
-                                <button key={era.id} onClick={() => setCurrentEra(era)} className={`w-full text-left p-3 rounded-lg transition ${currentEra.id === era.id ? 'bg-blue-600 shadow-lg text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                                <button key={era.id} onClick={() => setCurrentEra(era)} className={`w-full text-left p-3 rounded-lg transition ${currentEra.id === era.id ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800'}`}>
                                     <div className="text-sm font-bold">{era.enName}</div>
                                     <div className="text-[11px] opacity-60">{era.name}</div>
                                 </button>
                             ))}
                         </nav>
+                        <div className="mt-8 pt-6 border-t border-slate-800">
+                            <p className="text-[10px] text-slate-500 font-bold mb-3 uppercase tracking-widest">对话历史</p>
+                            <div className="space-y-2">
+                                {chatHistory.map(item => (
+                                    <div key={item.id} className="history-item flex justify-between items-center group bg-slate-800/40 p-2 rounded cursor-pointer hover:bg-slate-800 transition">
+                                        <span className="text-xs truncate flex-1" onClick={() => setMessages(item.dialog)}>{item.title}...</span>
+                                        <button onClick={() => deleteHistory(item.id)} className="delete-btn opacity-0 text-slate-500 hover:text-red-400 ml-2"><i className="fas fa-trash-alt text-[10px]"></i></button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </aside>
 
                     <main className="ml-72 flex-1 p-10 bg-white min-h-screen">
                         <header className="mb-10 flex justify-between items-end border-b pb-8">
                             <div>
-                                <h1 className="text-5xl font-black serif text-slate-900 mb-2 tracking-tight">{currentEra.enName}</h1>
-                                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold tracking-tighter">{currentEra.year}</span>
-                            </div>
-                            <div className="flex gap-4">
-                                {showDetailed && (
-                                    <button onClick={resetToQuickIntro} className="flex items-center gap-2 px-6 py-3 rounded-full font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 transition-all active:scale-95">
-                                        <i className="fas fa-history"></i>
-                                        返回简介
-                                    </button>
-                                )}
-                                <button onClick={getMoreDetails} disabled={isLoading} className={`flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all ${isLoading ? 'bg-slate-100 text-slate-400' : 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl active:scale-95'}`}>
-                                    <i className={`fas ${isLoading ? 'fa-circle-notch fa-spin' : 'fa-feather-alt'}`}></i>
-                                    {isLoading ? "史官翻阅卷宗..." : showDetailed ? "已获取深度内容" : "获取深度史料解析"}
-                                </button>
+                                <h1 className="text-5xl font-black serif text-slate-900 mb-2">{currentEra.enName}</h1>
+                                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-bold">{currentEra.year}</span>
                             </div>
                         </header>
 
-                        {showDetailed && (
-                            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-                                <div className="flex items-center gap-2 text-green-700">
-                                    <i className="fas fa-check-circle"></i>
-                                    <span className="font-bold">深度内容已加载</span>
-                                    <span className="text-sm">点击"返回简介"按钮查看简短版本</span>
-                                </div>
-                            </div>
-                        )}
-
                         <div className="bilingual-grid mb-12">
                             <div className="p-8 bg-slate-50 rounded-2xl relative border border-slate-100">
-                                <div className="flex justify-between items-center mb-6">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic">
-                                        {showDetailed ? "深度解析 (中文)" : "双语简介 (中文)"}
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                        {!isSpeechSupported && (
-                                            <span className="text-xs text-red-500">语音不可用</span>
-                                        )}
-                                        <button 
-                                            onClick={() => speak(content.zh, 'zh')} 
-                                            className={`play-btn ${speaking.zh ? 'playing' : ''}`}
-                                            disabled={!isSpeechSupported}
-                                        >
-                                            <i className="fas fa-volume-up text-lg"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                <button onClick={() => speak(content.zh, 'zh')} className={`play-btn absolute top-6 right-6 ${speaking.zh ? 'playing' : ''}`}><i className="fas fa-volume-up"></i></button>
                                 <p className="text-lg leading-relaxed text-slate-800">{content.zh}</p>
                             </div>
                             <div className="p-8 bg-blue-50/50 rounded-2xl relative border border-blue-100">
-                                <div className="flex justify-between items-center mb-6">
-                                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest italic">
-                                        {showDetailed ? "In-Depth Analysis (English)" : "Bilingual Context (English)"}
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                        {!isSpeechSupported && (
-                                            <span className="text-xs text-red-500">Voice Unavailable</span>
-                                        )}
-                                        <button 
-                                            onClick={() => speak(content.en, 'en')} 
-                                            className={`play-btn ${speaking.en ? 'playing' : ''}`}
-                                            disabled={!isSpeechSupported}
-                                        >
-                                            <i className="fas fa-volume-up text-lg"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                <button onClick={() => speak(content.en, 'en')} className={`play-btn absolute top-6 right-6 ${speaking.en ? 'playing' : ''}`}><i className="fas fa-volume-up"></i></button>
                                 <p className="text-xl leading-relaxed serif italic text-slate-700">{content.en}</p>
                             </div>
                         </div>
 
-                        <section className="bg-slate-50 p-6 rounded-xl border border-dashed border-slate-200">
-                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                                <i className="fas fa-landmark"></i> 龚教授推荐：权威参考文献与在线资源
+                        <section className="mt-12 bg-slate-100 rounded-2xl p-6 border border-slate-200">
+                            <h3 className="text-xl font-bold text-slate-800 serif mb-6 flex items-center gap-3">
+                                <span className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm italic">G</span>向专家提问
                             </h3>
-                            <div className="flex flex-wrap gap-3">
-                                {currentEra.sources.map((source, idx) => (
-                                    <a key={idx} href={source.url} target="_blank" className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:border-blue-500 hover:text-blue-600 transition-all hover:shadow-md">
-                                        <i className="fas fa-external-link-alt text-[10px] opacity-40"></i> {source.name}
-                                    </a>
+                            <div className="chat-scroll mb-6 space-y-4">
+                                {messages.map((msg, i) => (
+                                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[80%] p-4 rounded-2xl ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white text-slate-800 shadow-sm border border-slate-200 rounded-tl-none'}`}>
+                                            <p className="text-sm">{msg.content}</p>
+                                        </div>
+                                    </div>
                                 ))}
+                                <div ref={chatEndRef} />
                             </div>
+                            <form onSubmit={handleChat} className="flex gap-2">
+                                <input type="text" value={userInput} onChange={(e) => setUserInput(e.target.value)} placeholder="请输入您想问的问题..." className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                <button type="submit" className="bg-slate-900 text-white px-6 py-3 rounded-xl hover:bg-slate-800 transition"><i className="fas fa-paper-plane"></i></button>
+                            </form>
                         </section>
                     </main>
                 </div>
@@ -450,5 +187,4 @@
         root.render(<App />);
     </script>
 </body>
-
 </html>
