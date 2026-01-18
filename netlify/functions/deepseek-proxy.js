@@ -25,7 +25,7 @@ exports.handler = async (event) => {
           'Authorization': `Bearer ${API_KEY}`,
           'Content-Length': Buffer.byteLength(postData)
         },
-        timeout: 9000 // 9秒超时限制
+        timeout: 9000 // 
       };
 
       const req = https.request(options, (res) => {

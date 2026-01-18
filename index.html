@@ -74,11 +74,17 @@
                 setIsTyping(true);
 
                 try {
-                    const response = await fetch('/.netlify/functions/deepseek-proxy', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ era: `${currentEra.name}: ${userInput}` })
-                    });
+                   // 在 index.html 约 130 行左右修改
+                // 在 index.html 约 130 行左右修改
+                   const response = await fetch('/api/deepseek-proxy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ era: `${currentEra.name}: ${userInput}` })
+});
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ era: `${currentEra.name}: ${userInput}` })
+         });
                     
                     if (!response.ok) throw new Error('API Error');
                     const data = await response.json();
