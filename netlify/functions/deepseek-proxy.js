@@ -25,7 +25,7 @@ exports.handler = async (event) => {
           'Authorization': `Bearer ${API_KEY}`,
           'Content-Length': Buffer.byteLength(postData)
         },
-        timeout: 9000
+        timeout: 9000 // 9秒超时限制
       };
 
       const req = https.request(options, (res) => {
@@ -34,7 +34,7 @@ exports.handler = async (event) => {
         res.on('end', () => resolve({ statusCode: 200, body }));
       });
 
-      req.on('error', e => resolve({ statusCode: 500, body: e.message }));
+      req.on('error', e => resolve({ statusCode: 500, body: JSON.stringify({ error: e.message }) }));
       req.write(postData);
       req.end();
     });
