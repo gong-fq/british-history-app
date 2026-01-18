@@ -76,11 +76,13 @@
                 try {
                    // 在 index.html 约 130 行左右修改
                 // 在 index.html 约 130 行左右修改
-                   const response = await fetch('/api/deepseek-proxy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ era: `${currentEra.name}: ${userInput}` })
-});
+                   // 请在 index.html 找到 handleSend 函数中的 fetch 部分并修改
+            const response = await fetch('/api/deepseek-proxy', {
+                 method: 'POST',
+                 headers: { 'Content-Type': 'application/json' },
+                 body: JSON.stringify({ era: `${currentEra.name}: ${userInput}` })
+             }); 
+     });
                    method: 'POST',
                    headers: { 'Content-Type': 'application/json' },
                    body: JSON.stringify({ era: `${currentEra.name}: ${userInput}` })
